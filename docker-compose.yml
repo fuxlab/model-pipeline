@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  models:
+    image: tensorflow/serving:latest
+    ports:
+      - 8501:8501
+    volumes:
+      - ./app:/app
+      - ./models:/models
+    command: --model_config_file=/models/models.config
+
+  api:
+    build: .
+    volumes:
+      - ./app:/app
+    ports:
+      - 8080:8080
+    environment:
+      ENVIRONMENT: 'test'
+    command: ["/bin/bash", "/usr/local/startup.sh"]

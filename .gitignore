@@ -1,0 +1,7 @@
+*.sqlite3
+*.pyc
+__pyc__
+__pycache__
+*.DS_Store
+.env
+docker-compose-*.yml
