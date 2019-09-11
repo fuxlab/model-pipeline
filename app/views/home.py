@@ -1,5 +1,5 @@
 from flask_restful import Resource
-import config
+from config.config import VERSION
 
 class HomeView(Resource):
     
@@ -9,6 +9,6 @@ class HomeView(Resource):
         root information endpoint
         '''
         return {
-            'Visual Search Pipeline': 'v%s' % (config.VERSION)
+            'Visual Search Pipeline': 'v%s' % (VERSION)
         }
 

@@ -1,0 +1,27 @@
+import os
+
+def encode_first_model(parser=None, path=[]):
+    '''
+    return pipeline request-data
+    '''
+    return {}
+
+
+def decode_first_model(outpt, parser=None, path=[]):
+    '''
+    decode pipeline response data
+    '''
+    return output
+
+VERSION = 1
+MODEL_ENDPOINT = os.environ['TENSORFLOW_SERVE_ENDPOINT']
+STEP_DEFINITIONS = [
+    {
+        'start': True,
+        'model': 'first_model',
+        'version': 1,
+        'encoder': encode_first_model,
+        'decoder': decode_first_model
+    }
+]
+
