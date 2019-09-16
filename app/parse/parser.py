@@ -36,7 +36,10 @@ class Parser:
         if 'encoder' in step:
             # IMPORTANT
             # execute external step function when available
-            data = step['encoder'](parser=self, path=path)
+            if callable(step['encoder']):
+                data = step['encoder'](parser=self, path=path)
+            elif 'name' in step['encoder'] and 'params' in step['encoder']:
+                data = step['encoder']['name'](parser=self, path=path, params=step['encoder']['params'])
 
         response = False
         try:
@@ -64,7 +67,10 @@ class Parser:
         if 'error' not in response_data and 'decoder' in step:
             # IMPORTANT
             # execute external step function when available
-            response_data = step['decoder'](response_data, parser=self, path=path)
+            if callable(step['decoder']):
+                response_data = step['decoder'](response_data, parser=self, path=path)
+            elif 'name' in step['decoder'] and 'params' in step['encoder']:
+                response_data = step['decoder']['name'](response_data, parser=self, path=path, params=step['decoder']['params'])
             
         return response_data
 

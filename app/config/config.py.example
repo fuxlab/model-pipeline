@@ -1,13 +1,13 @@
 import os
 
-def encode_first_model(parser=None, path=[]):
+def encode_first_model(parser=None, path=[], params={}):
     '''
     return pipeline request-data
     '''
     return {}
 
 
-def decode_first_model(outpt, parser=None, path=[]):
+def decode_first_model(outpt, parser=None, path=[], params={}):
     '''
     decode pipeline response data
     '''
