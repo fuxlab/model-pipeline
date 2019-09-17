@@ -292,3 +292,195 @@ class TestParser(unittest.TestCase):
         }
         self.assertEqual(parser.data, expected_result)
         
+
+    @httpretty.activate
+    def test_switch_default_case(self):
+        '''
+        three step definitions 
+        '''
+        step_definition = [
+            { 'model': 'step1', 'start': True, 'next': [
+                { 'model': 'step2', 'case': 'result1' },
+                { 'model': 'step3', 'case': 'result2' }
+            ]},
+            { 'model': 'step2' },
+            { 'model': 'step3' },
+        ]
+
+        mock_model_response({
+            'step1': 'result1',
+            'step2': 'result2',
+            'step3': 'result3',
+        })
+        
+        parser = Parser(Config(step_definition), model_endpoint=app.config['model_endpoint'], version=app.config['version'], data={})
+        parser.process()
+
+        expected_result = {
+            'step1': {
+                'result': 'result1',
+                'next': {
+                    'step2':{
+                        'result': 'result2',
+                    }
+                }
+            }
+        }
+        self.assertEqual(parser.data, expected_result)
+        
+
+    @httpretty.activate
+    def test_switch_case_with_key_value_one_matching(self):
+        '''
+        three step definitions 
+        '''
+        step_definition = [
+            { 'model': 'step1', 'start': True, 'next': [
+                { 'model': 'step2', 'case': { 'key1': 'value1' } },
+                { 'model': 'step3', 'case': 'result2' }
+            ]},
+            { 'model': 'step2' }
+        ]
+
+        mock_model_response({
+            'step1': {
+                'key1': 'value1',
+                'key2': 'value2'
+            },
+            'step2': 'result2',
+            'step3': 'result3',
+        })
+        
+        parser = Parser(Config(step_definition), model_endpoint=app.config['model_endpoint'], version=app.config['version'], data={})
+        parser.process()
+
+        expected_result = {
+            'step1': {
+                'result': {
+                    'key1': 'value1',
+                    'key2': 'value2'
+                },
+                'next': {
+                    'step2':{
+                        'result': 'result2',
+                    }
+                }
+            }
+        }
+        self.assertEqual(parser.data, expected_result)
+
+
+    @httpretty.activate
+    def test_switch_case_with_key_value_one_matching_and_one_missing(self):
+        '''
+        three step definitions 
+        '''
+        step_definition = [
+            { 'model': 'step1', 'start': True, 'next': [
+                { 'model': 'step2', 'case': { 'key1': 'value1', 'key2': 'value2wrong' } },
+                { 'model': 'step3', 'case': 'result2' }
+            ]},
+            { 'model': 'step2' }
+        ]
+
+        mock_model_response({
+            'step1': {
+                'key1': 'value1',
+                'key2': 'value2'
+            },
+            'step2': 'result2',
+            'step3': 'result3',
+        })
+        
+        parser = Parser(Config(step_definition), model_endpoint=app.config['model_endpoint'], version=app.config['version'], data={})
+        parser.process()
+
+        expected_result = {
+            'step1': {
+                'result': {
+                    'key1': 'value1',
+                    'key2': 'value2'
+                }
+            }
+        }
+        self.assertEqual(parser.data, expected_result)
+
+
+    @httpretty.activate
+    def test_switch_case_with_key_value_key_missing(self):
+        '''
+        three step definitions 
+        '''
+        step_definition = [
+            { 'model': 'step1', 'start': True, 'next': [
+                { 'model': 'step2', 'case': { 'key3': 'value3' } },
+                { 'model': 'step3', 'case': 'result2' }
+            ]},
+            { 'model': 'step2' }
+        ]
+
+        mock_model_response({
+            'step1': {
+                'key1': 'value1',
+                'key2': 'value2'
+            },
+            'step2': 'result2',
+            'step3': 'result3',
+        })
+        
+        parser = Parser(Config(step_definition), model_endpoint=app.config['model_endpoint'], version=app.config['version'], data={})
+        parser.process()
+
+        expected_result = {
+            'step1': {
+                'result': {
+                    'key1': 'value1',
+                    'key2': 'value2'
+                }
+            }
+        }
+        self.assertEqual(parser.data, expected_result)
+
+
+    @httpretty.activate
+    def test_switch_case_with_value(self):
+        '''
+        three step definitions 
+        '''
+        step_definition = [
+            { 'model': 'step1', 'start': True, 'next': [
+                { 'model': 'step2', 'case': [ None, 'result'] },
+                { 'model': 'step3', 'case': 'result2' }
+            ]},
+            { 'model': 'step2' },
+            { 'model': 'step3' },
+        ]
+
+        mock_model_response({
+            'step1': [ 'resultX', 'result', 'resultY' ],
+            'step2': 'result2',
+            'step3': 'result3',
+        })
+        
+        parser = Parser(Config(step_definition), model_endpoint=app.config['model_endpoint'], version=app.config['version'], data={})
+        parser.process()
+
+        expected_result = {
+            'step1': {
+                0: {
+                    'result': 'resultX'
+                },
+                1: {
+                    'result': 'result',
+                    'next': {
+                        'step2':{
+                            'result': 'result2',
+                        }
+                    }
+                },
+                2: {
+                    'result': 'resultY'
+                }
+            }
+        }
+        self.assertEqual(parser.data, expected_result)

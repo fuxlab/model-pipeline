@@ -9,6 +9,7 @@ class Config:
 
         self.step_definition = step_definition
         self.step_keys = [s[self.identifier] for s in self.step_definition]
+        self.msg = []
 
 
     def start(self):
@@ -35,15 +36,26 @@ class Config:
         return False
     
 
-    def next(self, step_name):
+    def validate(self):
         '''
-        get next steps of step
+        validate step_definition
         '''
+        if len(self.start()) is 0:
+            self.msg.append('start is missing')
+            
         next_steps = []
-        step = self.get(step_name)
-        if step_name and 'next' in step.keys():
-            for next_step_name in step['next']:
-                if next_step_name in self.step_keys:
-                    next_steps.append(next_step_name)
+        for step in self.step_definition:
+            if 'next' in step and len(step['next']) > 0:
+                for next_step in step['next']:
+                    if type(next_step) is not str:
+                        if 'model' not in next_step:
+                            self.msg.append('model key missing for %s' % (step))
+                        else:
+                            if not self.get(next_step['model']):                            
+                                self.msg.append('next step %s from %s not found.' % (step, next_step['model']))
+                    elif not self.get(next_step):
+                        self.msg.append('next step %s from %s not found.' % (step, next_step))
 
-        return next_steps
+        if len(self.msg) == 0:
+            return True
+        return False

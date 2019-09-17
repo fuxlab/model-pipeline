@@ -92,6 +92,19 @@ class Parser:
         Parser.dict_merge(self.data, nested)
 
 
+    def get_result_for_path(self, path):
+        '''
+        parse result data of n(path) steps and return result
+        '''
+        ret = self.data
+        for path_step in path:
+            if path_step is not 'next' and path_step in ret:
+                ret = ret[path_step]
+            else:
+                ret = ret['result']
+        return ret
+
+
     def process(self, step_names=False, path=[]):
         '''
         go through all steps and collect results
@@ -100,28 +113,63 @@ class Parser:
             step_names = self.config.start()
 
         for step_name in step_names:
-            step = self.config.get(step_name)
-            if not step:
-                continue
-
-            new_path = path + [step_name]
-            results = self.execute(step, path)
+            valid_step_name = False
             
-
-            if isinstance(results, list):
-                # many results => do processing for each
-                index = 0
-                for result in results:
-                    self.insert_at_path(new_path + [index, 'result'], result)
-                    if 'next' in step.keys() and  len(step['next']) > 0:
-                        self.process(step_names=step['next'], path=new_path + [index, 'next'])
-                    index += 1
+            if type(step_name) is str:
+                valid_step_name = step_name
             else:
-                self.insert_at_path(new_path + ['result'], results)
-                # one result => do processing once
-                if 'next' in step.keys() and  len(step['next']) > 0:
-                    self.process(step_names=step['next'], path=new_path + ['next'])
-        
+                data = self.get_result_for_path(path)
+                
+                # compare the whole result
+                if data == step_name['case']:
+                    valid_step_name = step_name['model']
+                
+                # compare one element in list
+                elif type(step_name['case']) is list:
+                    for index, case_result in enumerate(step_name['case']):
+                        if case_result is not None and case_result == data:
+                            valid_step_name = step_name['model']
+                
+                # compare one or more keys in dict
+                elif type(step_name['case']) is dict and type(data) is dict:
+
+                    checks = []
+                    for key, value in step_name['case'].items():
+                        # values are equal
+                        if key in data.keys() and data[key] == value:
+                            checks.append(True)
+                        else:
+                            checks.append(False)
+
+                    # ALL checks are TRUE
+                    if all(check == True for check in checks):
+                        valid_step_name = step_name['model']
+
+                # no matchin', go next
+                else:
+                    None
             
+            if valid_step_name is not False:
+                step = self.config.get(valid_step_name)
+                if not step:
+                    continue
+
+                new_path = path + [valid_step_name]
+                results = self.execute(step, path)
+                
+
+                if isinstance(results, list):
+                    # many results => do processing for each
+                    index = 0
+                    for result in results:
+                        self.insert_at_path(new_path + [index, 'result'], result)
+                        if 'next' in step.keys() and  len(step['next']) > 0:
+                            self.process(step_names=step['next'], path=new_path + [index, 'next'])
+                        index += 1
+                else:
+                    self.insert_at_path(new_path + ['result'], results)
+                    # one result => do processing once
+                    if 'next' in step.keys() and  len(step['next']) > 0:
+                        self.process(step_names=step['next'], path=new_path + ['next'])
         
         return self.data
