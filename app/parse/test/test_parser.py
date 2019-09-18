@@ -484,3 +484,52 @@ class TestParser(unittest.TestCase):
             }
         }
         self.assertEqual(parser.data, expected_result)
+
+
+    @httpretty.activate
+    def test_switch_case_with__value_value(self):
+        '''
+        three step definitions 
+        '''
+        step_definition = [
+            { 'model': 'step1', 'start': True, 'next': [
+                { 'model': 'step2', 'case': [ 100, 200, None ] },
+                { 'model': 'step3', 'case': 'result2' }
+            ]},
+            { 'model': 'step2' },
+            { 'model': 'step3' },
+        ]
+
+        mock_model_response({
+            'step1': [ [ 100,200,300 ], [400,500,600], [700,800,900 ] ],
+            'step2': 'result2',
+            'step3': 'result3',
+        })
+        
+        parser = Parser(Config(step_definition), model_endpoint=app.config['model_endpoint'], version=app.config['version'], data={})
+        parser.process()
+
+        expected_result = {
+            'step1': {
+                0: {
+                    'result': [
+                        100,200,300,
+                    ],
+                    'next': {
+                        'step2': {'result': 'result2'}
+
+                    }
+                },
+                1: {
+                    'result': [
+                        400,500,600
+                    ]
+                },
+                2: {
+                    'result': [
+                        700,800,900
+                    ]
+                },
+            }
+        }
+        self.assertEqual(parser.data, expected_result)

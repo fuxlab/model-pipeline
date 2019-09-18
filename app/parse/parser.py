@@ -126,10 +126,16 @@ class Parser:
                 
                 # compare one element in list
                 elif type(step_name['case']) is list:
-                    for index, case_result in enumerate(step_name['case']):
-                        if case_result is not None and case_result == data:
-                            valid_step_name = step_name['model']
-                
+                    valid_step_name = step_name['model']
+                    if type(data) is list:
+                        for index, case_step in enumerate(step_name['case']):
+                            if type(data) is list and case_step is not None and case_step != data[index]:
+                                valid_step_name = False
+                    else:
+                        for index, case_result in enumerate(step_name['case']):
+                            if case_result is not None and case_result != data:
+                                valid_step_name = False
+            
                 # compare one or more keys in dict
                 elif type(step_name['case']) is dict and type(data) is dict:
 
@@ -155,8 +161,7 @@ class Parser:
                     continue
 
                 new_path = path + [valid_step_name]
-                results = self.execute(step, path)
-                
+                results = self.execute(step, path)    
 
                 if isinstance(results, list):
                     # many results => do processing for each
