@@ -69,7 +69,7 @@ class Parser:
             # execute external step function when available
             if callable(step['decoder']):
                 response_data = step['decoder'](response_data, parser=self, path=path)
-            elif 'name' in step['decoder'] and 'params' in step['encoder']:
+            elif 'name' in step['decoder'] and 'params' in step['decoder']:
                 response_data = step['decoder']['name'](response_data, parser=self, path=path, params=step['decoder']['params'])
             
         return response_data
