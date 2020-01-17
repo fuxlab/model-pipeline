@@ -1,6 +1,11 @@
+tensorflow
+tensorflow-serving-api
 flask
 flask-restful
 numpy
 pillow
 httpretty
 requests
+scikit-learn
+scikit-image
+scipy

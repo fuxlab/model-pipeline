@@ -27,6 +27,66 @@ class Parser:
         return "%s/v%s/models/%s/versions/%s:predict" % (self.model_endpoint, self.version, model_name, model_version)
 
 
+    def json_connection(self, data, step):
+        response = False
+        headers = { "content-type": "application/json" }
+
+        json_string=json.dumps(data)
+        # size of json request data
+        #print(len(json_string.encode('utf-8')))
+        step_version = 1
+        
+        if 'version' in step:
+            step_version = step['version']
+        
+        try:
+            response = requests.post(self.model_url(step['model'], step_version), data=json_string, headers=headers)
+            response_data = json.loads(response.text)
+        
+        except:
+            
+            if response:
+                msg = response.text[:1000]
+            else:
+                msg = 'request failed'
+            
+            response_data = { 'error': { 'msg': msg } }
+
+        return response_data
+
+
+    def gprc_connection(self, data, step):
+        '''
+        inspired by https://github.com/bendangnuksung/mrcnn_serving_ready
+        '''
+        import grpc
+        import tensorflow as tf
+        from tensorflow_serving.apis import prediction_service_pb2_grpc
+        from tensorflow_serving.apis import predict_pb2
+
+        host = 'models'
+        port = '8500'
+        message_length = 4096 * 4096 * 3 # Max LENGTH the GRPC should handle
+        channel = grpc.insecure_channel(str(host) + ':' + str(port), options=[('grpc.max_receive_message_length', message_length)])
+        model_name = 'general_segmenter'
+        signature_name = 'serving_default'
+
+        channel = grpc.insecure_channel(str(host) + ':' + str(port), options=[('grpc.max_receive_message_length', message_length)])
+        stub = prediction_service_pb2_grpc.PredictionServiceStub(channel)
+
+        request = predict_pb2.PredictRequest()
+        request.model_spec.name = model_name
+        request.model_spec.signature_name = signature_name
+        
+        for key, value in data.items():
+            request.inputs[key].CopyFrom(value)
+
+        result = {
+            'response': stub.Predict(request, 60.)
+        }
+        return result
+
+
     def execute(self, step, path=[]):
         '''
         execute step actions
@@ -41,29 +101,10 @@ class Parser:
             elif 'name' in step['encoder'] and 'params' in step['encoder']:
                 data = step['encoder']['name'](parser=self, path=path, params=step['encoder']['params'])
 
-        response = False
-        try:
-            headers = { "content-type": "application/json" }
-            json_string=json.dumps(data)
-            
-            # size of json request data
-            #print(len(json_string.encode('utf-8')))
-            step_version = 1
-            
-            if 'version' in step:
-                step_version = step['version']
-            
-            response = requests.post(self.model_url(step['model'], step_version), data=json_string, headers=headers)
-            response_data = json.loads(response.text)
 
-        except:
-            if response:
-                msg = response.text[:1000]
-            else:
-                msg = 'request failed'
-            
-            response_data = { 'error': { 'msg': msg } }
-        
+        #response_data = self.json_connection(data, step)
+        response_data = self.gprc_connection(data, step)
+
         if 'error' not in response_data and 'decoder' in step:
             # IMPORTANT
             # execute external step function when available
