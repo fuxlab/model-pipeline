@@ -1,3 +1,5 @@
+import os
+
 from flask import Flask
 from flask_restful import Resource, Api
 
@@ -19,6 +21,6 @@ api.add_resource(PipelineView, '/')
 if __name__ == '__main__':
     app.run(
         host= '0.0.0.0',
-        debug=True,
+        debug=False,     # ne to disable, to instanciate tensorflow correct. see: https://github.com/tensorflow/tensorflow/issues/34607
         port=8080
     )

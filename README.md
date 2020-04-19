@@ -1,6 +1,7 @@
 # Model-Pipeline
 
-lorem ipsum dolot sit se amet
+A Tensorflow Serve API for chaining different Models into a workflow, so called pipeline.
+
 
 ## Models
 
@@ -38,7 +39,7 @@ Example step definitions:
 
      'start': 1,
         'model': 'ssd_mobilenet_v1_coco_2018_01_28',
-        'imput': 'image',
+        'input': 'image',
         'next_steps': [
             {
                 'model': 'detection_garment',
@@ -74,6 +75,6 @@ run tests:
 
 
 Inspirations:
-
+- [MaskRCNN Interence Implementation](https://github.com/bendangnuksung/mrcnn_serving_ready)
 - https://www.tensorflow.org/tfx/serving/docker
 - https://towardsdatascience.com/deploying-keras-models-using-tensorflow-serving-and-flask-508ba00f1037
